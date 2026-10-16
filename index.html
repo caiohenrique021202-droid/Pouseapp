@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PouseApp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+  :root{
+    --paper:#F3F0E6;
+    --ink:#27261F;
+    --ink-soft:#5B5A4F;
+    --green:#3F6D52;
+    --green-dark:#2E5540;
+    --brass:#A9842C;
+    --brick:#A8402E;
+    --card:#FFFFFF;
+    --line:#E2DCC8;
+    color-scheme: light;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    -webkit-text-size-adjust:100%;
+  }
+  h1,h2,h3,.brand{font-family:'Fraunces',serif;font-weight:600;}
+  button, input, select, textarea{font-family:inherit;font-size:16px;}
+  button{cursor:pointer;}
+  a{color:var(--green-dark);}
+
+  /* ---------- Auth ---------- */
+  #auth-screen{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding:32px 20px;
+    max-width:420px;
+    margin:0 auto;
+  }
+  .brand-mark{font-size:30px;margin:0 0 4px;}
+  .brand-sub{color:var(--ink-soft);margin:0 0 28px;font-size:14.5px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:5px;}
+  .field input{
+    width:100%;
+    padding:12px 14px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--card);
+    color:var(--ink);
+  }
+  .field input:focus{outline:2px solid var(--green);outline-offset:1px;}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    width:100%;
+    padding:13px 16px;
+    border-radius:8px;
+    border:none;
+    background:var(--green);
+    color:#fff;
+    font-weight:600;
+    font-size:15.5px;
+  }
+  .btn:active{background:var(--green-dark);}
+  .btn.secondary{background:transparent;color:var(--green-dark);border:1px solid var(--line);}
+  .btn.danger{background:var(--brick);}
+  .btn.small{width:auto;padding:9px 14px;font-size:14px;}
+  .btn[disabled]{opacity:.55;}
+  .link-row{text-align:center;margin-top:16px;font-size:14px;}
+  .link-row button{background:none;border:none;color:var(--green-dark);font-weight:600;padding:4px;}
+  .auth-tabs{display:flex;gap:8px;margin-bottom:22px;}
+  .auth-tabs button{
+    flex:1;padding:10px;border-radius:8px;border:1px solid var(--line);
+    background:var(--card);color:var(--ink-soft);font-weight:600;font-size:14px;
+  }
+  .auth-tabs button.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+  /* ---------- App shell ---------- */
+  #app-screen{display:none;min-height:100vh;flex-direction:column;}
+  header.topbar{
+    position:sticky;top:0;z-index:5;
+    background:var(--paper);
+    border-bottom:1px solid var(--line);
+    padding:14px 18px;
+    padding-top:calc(14px + env(safe-area-inset-top,0px));
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  header.topbar .who{display:flex;flex-direction:column;}
+  header.topbar .who .nome{font-weight:600;font-size:15px;}
+  header.topbar .who .papel{font-size:12px;color:var(--ink-soft);}
+  header.topbar button{background:none;border:none;color:var(--brick);font-weight:600;font-size:13.5px;}
+
+  main{flex:1;padding:16px 16px 90px;max-width:640px;width:100%;margin:0 auto;}
+  section.view{display:none;}
+  section.view.active{display:block;}
+
+  .section-title{font-size:19px;margin:4px 0 14px;}
+  .empty{color:var(--ink-soft);font-size:14.5px;padding:18px 4px;text-align:center;}
+
+  .row{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-left:4px solid var(--ink);
+    border-radius:6px;
+    padding:14px 16px;
+    margin-bottom:10px;
+  }
+  .row.s-pendente, .row.s-reservado{border-left-color:var(--brass);}
+  .row.s-confirmada, .row.s-hospedado{border-left-color:var(--green);}
+  .row.s-cancelada, .row.s-cancelado{border-left-color:var(--brick);}
+  .row.s-concluida, .row.s-finalizado{border-left-color:var(--ink-soft);}
+  .row-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .row-title{font-weight:600;font-size:15px;}
+  .row-sub{color:var(--ink-soft);font-size:13px;margin-top:2px;}
+  .chip{
+    font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:99px;
+    background:var(--paper);border:1px solid var(--line);white-space:nowrap;
+  }
+  .row-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+
+  .fab-add{
+    width:100%;padding:12px;border-radius:8px;border:1.5px dashed var(--line);
+    background:transparent;color:var(--green-dark);font-weight:600;margin-bottom:16px;
+  }
+
+  .card-form{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px;}
+  .card-form h3{margin:0 0 12px;font-size:16px;}
+  .form-actions{display:flex;gap:10px;margin-top:4px;}
+  .form-actions .btn{width:auto;flex:1;}
+
+  nav.tabbar{
+    position:fixed;bottom:0;left:0;right:0;
+    background:var(--card);border-top:1px solid var(--line);
+    display:flex;
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    z-index:5;
+  }
+  nav.tabbar button{
+    flex:1;background:none;border:none;padding:11px 4px 9px;
+    color:var(--ink-soft);font-size:12px;font-weight:600;
+  }
+  nav.tabbar button.active{color:var(--green-dark);}
+
+  #toast{
+    position:fixed;left:16px;right:16px;bottom:calc(74px + env(safe-area-inset-bottom,0px));
+    display:none;z-index:50;
+  }
+  #toast .box{
+    max-width:600px;margin:0 auto;padding:12px 16px;border-radius:8px;
+    background:var(--ink);color:#fff;font-size:14px;text-align:center;
+  }
+  #toast.err .box{background:var(--brick);}
+
+  .chat-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;max-height:55vh;overflow-y:auto;padding:2px;}
+  .msg{max-width:78%;padding:9px 12px;border-radius:10px;font-size:14px;background:var(--card);border:1px solid var(--line);}
+  .msg.mine{align-self:flex-end;background:var(--green);color:#fff;border-color:var(--green);}
+  .msg .meta{font-size:11px;opacity:.75;margin-top:3px;}
+  .chat-send{display:flex;gap:8px;position:sticky;bottom:0;background:var(--paper);padding-top:6px;}
+  .chat-send input{flex:1;}
+  .chat-send .btn{width:auto;padding:12px 16px;}
+</style>
+</head>
+<body>
+
+<div id="auth-screen">
+  <h1 class="brand-mark">PouseApp</h1>
+  <p class="brand-sub">gestão de pousadas</p>
+
+  <div class="auth-tabs">
+    <button id="tab-login" class="active" onclick="showAuthMode('login')">Entrar</button>
+    <button id="tab-signup" onclick="showAuthMode('signup')">Criar conta</button>
+  </div>
+
+  <form id="form-login" onsubmit="return doLogin(event)">
+    <div class="field"><label>E-mail</label><input type="email" id="login-email" required autocomplete="email"></div>
+    <div class="field"><label>Senha</label><input type="password" id="login-pass" required autocomplete="current-password"></div>
+    <button class="btn" type="submit">Entrar</button>
+    <div class="link-row"><button type="button" onclick="showAuthMode('forgot')">Esqueci minha senha</button></div>
+  </form>
+
+  <form id="form-signup" style="display:none" onsubmit="return doSignup(event)">
+    <div class="field"><label>Nome</label><input type="text" id="signup-nome" required></div>
+    <div class="field"><label>E-mail</label><input type="email" id="signup-email" required autocomplete="email"></div>
+    <div class="field"><label>Senha (mínimo 6 caracteres)</label><input type="password" id="signup-pass" required minlength="6" autocomplete="new-password"></div>
+    <button class="btn" type="submit">Criar conta</button>
+  </form>
+
+  <form id="form-forgot" style="display:none" onsubmit="return doForgot(event)">
+    <p class="row-sub" style="margin-bottom:14px;">Informe seu e-mail. Vamos enviar um link de recuperação.</p>
+    <div class="field"><label>E-mail</label><input type="email" id="forgot-email" required></div>
+    <button class="btn" type="submit">Enviar link</button>
+    <div class="link-row"><button type="button" onclick="showAuthMode('login')">Voltar para entrar</button></div>
+  </form>
+
+  <form id="form-reset" style="display:none" onsubmit="return doReset(event)">
+    <p class="row-sub" style="margin-bottom:14px;">Defina sua nova senha.</p>
+    <div class="field"><label>Nova senha</label><input type="password" id="reset-pass" required minlength="6"></div>
+    <button class="btn" type="submit">Salvar nova senha</button>
+  </form>
+</div>
+
+<div id="app-screen">
+  <header class="topbar">
+    <div class="who">
+      <span class="nome" id="hdr-nome">—</span>
+      <span class="papel" id="hdr-papel">—</span>
+    </div>
+    <button onclick="doLogout()">Sair</button>
+  </header>
+
+  <main>
+    <!-- SUPER ADMIN -->
+    <section class="view" id="view-pousadas">
+      <h2 class="section-title">Pousadas</h2>
+      <button class="fab-add" onclick="toggleNovaPousada()">+ Nova pousada</button>
+      <div id="form-nova-pousada" class="card-form" style="display:none">
+        <h3>Nova pousada</h3>
+        <div class="field"><label>Nome</label><input type="text" id="np-nome"></div>
+        <div class="form-actions">
+          <button class="btn secondary" onclick="toggleNovaPousada()">Cancelar</button>
+          <button class="btn" onclick="criarPousada()">Criar</button>
+        </div>
+      </div>
+      <div id="lista-pousadas"></div>
+    </section>
+
+    <!-- SUB ADMIN: reservas -->
+    <section class="view" id="view-sa-reservas">
+      <h2 class="section-title">Reservas</h2>
+      <div id="lista-sa-reservas"></div>
+    </section>
+
+    <!-- SUB ADMIN: hospedagens -->
+    <section class="view" id="view-sa-hospedagens">
+      <h2 class="section-title">Hospedagens</h2>
+      <div id="lista-sa-hospedagens"></div>
+    </section>
+
+    <!-- SUB ADMIN: refeições -->
+    <section class="view" id="view-sa-refeicoes">
+      <h2 class="section-title">Refeições</h2>
+      <button class="fab-add" onclick="toggleNovaRefeicao()">+ Nova refeição</button>
+      <div id="form-nova-refeicao" class="card-form" style="display:none">
+        <h3>Nova refeição</h3>
+        <div class="field"><label>Título</label><input type="text" id="nr-titulo"></div>
+        <div class="field"><label>Descrição (opcional)</label><input type="text" id="nr-descricao"></div>
+        <div class="field"><label>Horário (opcional)</label><input type="datetime-local" id="nr-horario"></div>
+        <div class="form-actions">
+          <button class="btn secondary" onclick="toggleNovaRefeicao()">Cancelar</button>
+          <button class="btn" onclick="criarRefeicao()">Cadastrar</button>
+        </div>
+      </div>
+      <div id="lista-sa-refeicoes"></div>
+    </section>
+
+    <!-- SUB ADMIN: chat -->
+    <section class="view" id="view-sa-chat">
+      <h2 class="section-title">Chat da pousada</h2>
+      <div class="chat-list" id="chat-list-sa"></div>
+      <div class="chat-send">
+        <input type="text" id="chat-input-sa" placeholder="Escreva uma mensagem...">
+        <button class="btn" onclick="enviarMensagem('sa')">Enviar</button>
+      </div>
+    </section>
+
+    <!-- HOSPEDE: reservas -->
+    <section class="view" id="view-h-reservas">
+      <h2 class="section-title">Minhas reservas</h2>
+      <button class="fab-add" onclick="toggleNovaReserva()">+ Solicitar reserva</button>
+      <div id="form-nova-reserva" class="card-form" style="display:none">
+        <h3>Solicitar reserva</h3>
+        <div class="field"><label>Pousada</label><select id="rr-pousada"></select></div>
+        <div class="field"><label>Check-in</label><input type="date" id="rr-checkin"></div>
+        <div class="field"><label>Check-out</label><input type="date" id="rr-checkout"></div>
+        <div class="field"><label>Quantidade de hóspedes</label><input type="number" id="rr-qtd" min="1" max="30" value="1"></div>
+        <div class="field"><label>Observações (opcional)</label><input type="text" id="rr-obs"></div>
+        <div class="form-actions">
+          <button class="btn secondary" onclick="toggleNovaReserva()">Cancelar</button>
+          <button class="btn" onclick="solicitarReserva()">Enviar solicitação</button>
+        </div>
+      </div>
+      <div id="lista-h-reservas"></div>
+    </section>
+
+    <!-- HOSPEDE: hospedagem -->
+    <section class="view" id="view-h-hospedagem">
+      <h2 class="section-title">Minha hospedagem</h2>
+      <div id="lista-h-hospedagem"></div>
+    </section>
+
+    <!-- HOSPEDE: refeições -->
+    <section class="view" id="view-h-refeicoes">
+      <h2 class="section-title">Refeições</h2>
+      <div id="lista-h-refeicoes"></div>
+    </section>
+
+    <!-- HOSPEDE: chat -->
+    <section class="view" id="view-h-chat">
+      <h2 class="section-title">Fale com a recepção</h2>
+      <div class="chat-list" id="chat-list-h"></div>
+      <div class="chat-send">
+        <input type="text" id="chat-input-h" placeholder="Escreva uma mensagem...">
+        <button class="btn" onclick="enviarMensagem('h')">Enviar</button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar" id="tabbar"></nav>
+</div>
+
+<div id="toast"><div class="box" id="toast-box"></div></div>
+
+<script>
+/* =========================================================
+   Configuração do Supabase
+   ========================================================= */
+const SUPABASE_URL = 'https://fjsehxpyznahuwqtgpog.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_TbblUTZHhH86EtofNUOS5w_KZgZrjR8';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let perfil = null;          // linha de public.perfis do usuário logado
+let minhaPousadaId = null;  // para sub_adm
+let chatChannel = null;
+
+/* =========================================================
+   Util
+   ========================================================= */
+function toast(msg, isErr){
+  const t = document.getElementById('toast');
+  document.getElementById('toast-box').textContent = msg;
+  t.className = isErr ? 'err' : '';
+  t.style.display = 'block';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>{ t.style.display='none'; }, 3600);
+}
+function fmtData(iso){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric'}) +
+         ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+}
+function fmtDataCurta(iso){
+  if(!iso) return '—';
+  return new Date(iso).toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric'});
+}
+async function chamarRpc(nome, args){
+  const { data, error } = await sb.rpc(nome, args);
+  if(error){ toast(error.message, true); throw error; }
+  return data;
+}
+
+/* =========================================================
+   Autenticação
+   ========================================================= */
+function showAuthMode(mode){
+  ['login','signup','forgot','reset'].forEach(m=>{
+    document.getElementById('form-'+m).style.display = (m===mode)?'block':'none';
+  });
+  document.getElementById('tab-login').classList.toggle('active', mode==='login');
+  document.getElementById('tab-signup').classList.toggle('active', mode==='signup');
+}
+
+async function doLogin(ev){
+  ev.preventDefault();
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if(error){ toast(traduzErroAuth(error), true); return false; }
+  return false;
+}
+
+async function doSignup(ev){
+  ev.preventDefault();
+  const nome = document.getElementById('signup-nome').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const pass = document.getElementById('signup-pass').value;
+  const { error } = await sb.auth.signUp({
+    email, password: pass,
+    options: { data: { full_name: nome } }
+  });
+  if(error){ toast(traduzErroAuth(error), true); return false; }
+  toast('Conta criada! Se a confirmação por e-mail estiver ativa no projeto, confira sua caixa de entrada antes de entrar.');
+  showAuthMode('login');
+  return false;
+}
+
+async function doForgot(ev){
+  ev.preventDefault();
+  const email = document.getElementById('forgot-email').value.trim();
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href.split('#')[0] });
+  if(error){ toast(traduzErroAuth(error), true); return false; }
+  toast('Se esse e-mail existir, enviamos um link de recuperação.');
+  showAuthMode('login');
+  return false;
+}
+
+async function doReset(ev){
+  ev.preventDefault();
+  const pass = document.getElementById('reset-pass').value;
+  const { error } = await sb.auth.updateUser({ password: pass });
+  if(error){ toast(traduzErroAuth(error), true); return false; }
+  toast('Senha atualizada. Você já está conectado.');
+  history.replaceState(null, '', window.location.pathname);
+  return false;
+}
+
+async function doLogout(){
+  await sb.auth.signOut();
+}
+
+function traduzErroAuth(error){
+  const m = error.message || '';
+  if(m.includes('Invalid login credentials')) return 'E-mail ou senha incorretos.';
+  if(m.includes('User already registered')) return 'Já existe uma conta com esse e-mail.';
+  if(m.includes('Password should be at least')) return 'A senha precisa ter pelo menos 6 caracteres.';
+  return m || 'Ocorreu um erro. Tente novamente.';
+}
+
+/* Detecta link de recuperação de senha (#type=recovery na URL) */
+sb.auth.onAuthStateChange((event, session) => {
+  if(event === 'PASSWORD_RECOVERY'){
+    document.getElementById('app-screen').style.display = 'none';
+    document.getElementById('auth-screen').style.display = 'flex';
+    showAuthMode('reset');
+    return;
+  }
+  if(session){
+    iniciarApp(session);
+  } else {
+    document.getElementById('app-screen').style.display = 'none';
+    document.getElementById('auth-screen').style.display = 'flex';
+    if(chatChannel){ sb.removeChannel(chatChannel); chatChannel = null; }
+  }
+});
+
+/* =========================================================
+   Boot do app após login
+   ========================================================= */
+async function iniciarApp(session){
+  const { data, error } = await sb.from('perfis').select('*').eq('id', session.user.id).single();
+  if(error || !data){
+    toast('Não foi possível carregar seu perfil.', true);
+    return;
+  }
+  perfil = data;
+
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'flex';
+  document.getElementById('hdr-nome').textContent = perfil.nome;
+  document.getElementById('hdr-papel').textContent =
+    perfil.role === 'super_admin' ? 'Super Admin' :
+    perfil.role === 'sub_adm' ? 'Sub-Administrador' : 'Hóspede';
+
+  montarTabbar();
+
+  if(perfil.role === 'super_admin'){
+    trocarView('pousadas');
+  } else if(perfil.role === 'sub_adm'){
+    const { data: pousada } = await sb.from('pousadas').select('id').eq('sub_adm_id', perfil.id).maybeSingle();
+    minhaPousadaId = pousada ? pousada.id : null;
+    trocarView('sa-reservas');
+  } else {
+    trocarView('h-reservas');
+  }
+}
+
+function montarTabbar(){
+  const bar = document.getElementById('tabbar');
+  let tabs = [];
+  if(perfil.role === 'super_admin'){
+    tabs = [['pousadas','Pousadas']];
+  } else if(perfil.role === 'sub_adm'){
+    tabs = [['sa-reservas','Reservas'],['sa-hospedagens','Hospedagens'],['sa-refeicoes','Refeições'],['sa-chat','Chat']];
+  } else {
+    tabs = [['h-reservas','Reservas'],['h-hospedagem','Hospedagem'],['h-refeicoes','Refeições'],['h-chat','Chat']];
+  }
+  bar.innerHTML = tabs.map(([id,label])=>`<button data-tab="${id}" onclick="trocarView('${id}')">${label}</button>`).join('');
+}
+
+function trocarView(id){
+  document.querySelectorAll('section.view').forEach(s=>s.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  document.querySelectorAll('nav.tabbar button').forEach(b=>b.classList.toggle('active', b.dataset.tab===id));
+
+  if(id==='pousadas') carregarPousadas();
+  if(id==='sa-reservas') carregarReservasSubadmin();
+  if(id==='sa-hospedagens') carregarHospedagensSubadmin();
+  if(id==='sa-refeicoes') carregarRefeicoesSubadmin();
+  if(id==='sa-chat') abrirChat('sa');
+  if(id==='h-reservas') carregarReservasHospede();
+  if(id==='h-hospedagem') carregarHospedagemHospede();
+  if(id==='h-refeicoes') carregarRefeicoesHospede();
+  if(id==='h-chat') abrirChat('h');
+}
+
+/* =========================================================
+   SUPER ADMIN — Pousadas
+   ========================================================= */
+function toggleNovaPousada(){
+  const f = document.getElementById('form-nova-pousada');
+  f.style.display = f.style.display==='none' ? 'block' : 'none';
+}
+async function criarPousada(){
+  const nome = document.getElementById('np-nome').value.trim();
+  if(!nome){ toast('Dê um nome para a pousada.', true); return; }
+  await chamarRpc('fn_criar_pousada', { p_nome: nome });
+  document.getElementById('np-nome').value = '';
+  toggleNovaPousada();
+  toast('Pousada criada.');
+  carregarPousadas();
+}
+async function carregarPousadas(){
+  const box = document.getElementById('lista-pousadas');
+  box.innerHTML = '<p class="empty">Carregando...</p>';
+  const { data: pousadas, error } = await sb.from('pousadas').select('*').order('criado_em', {ascending:false});
+  if(error){ box.innerHTML = '<p class="empty">Erro ao carregar.</p>'; return; }
+  if(!pousadas.length){ box.innerHTML = '<p class="empty">Nenhuma pousada cadastrada ainda.</p>'; return; }
+
+  const subIds = pousadas.filter(p=>p.sub_adm_id).map(p=>p.sub_adm_id);
+  let subs = {};
+  if(subIds.length){
+    const { data: perfisSubs } = await sb.from('perfis').select('id,nome,email').in('id', subIds);
+    (perfisSubs||[]).forEach(p=>{ subs[p.id] = p; });
+  }
+
+  box.innerHTML = pousadas.map(p=>{
+    const sub = p.sub_adm_id ? subs[p.sub_adm_id] : null;
+    return `
+    <div class="row ${p.ativo?'':'s-cancelada'}">
+      <div class="row-top">
+        <div>
+          <div class="row-title">${escapeHtml(p.nome)}</div>
+          <div class="row-sub">${sub ? 'Sub-admin: '+escapeHtml(sub.nome) : 'Sem sub-administrador'}</div>
+          <div class="row-sub">Limite: ${p.limite_hospedes} hóspedes</div>
+        </div>
+        <span class="chip">${p.ativo?'Ativa':'Inativa'}</span>
+      </div>
+      <div class="row-actions">
+        <button class="btn small secondary" onclick="renomearPousada('${p.id}','${escapeAttr(p.nome)}')">Renomear</button>
+        <button class="btn small secondary" onclick="alternarAtivoPousada('${p.id}', ${!p.ativo})">${p.ativo?'Desativar':'Ativar'}</button>
+        ${sub
+          ? `<button class="btn small danger" onclick="desvincularSubadmin('${p.id}')">Desvincular sub-admin</button>`
+          : `<button class="btn small" onclick="abrirVincular('${p.id}')">Vincular sub-admin</button>`
+        }
+      </div>
+      <div id="vincular-${p.id}"></div>
+    </div>`;
+  }).join('');
+}
+async function renomearPousada(id, nomeAtual){
+  const novo = prompt('Novo nome da pousada:', nomeAtual);
+  if(novo===null || !novo.trim()) return;
+  await chamarRpc('fn_atualizar_pousada', { p_pousada_id: id, p_nome: novo.trim(), p_ativo: null });
+  toast('Pousada atualizada.');
+  carregarPousadas();
+}
+async function alternarAtivoPousada(id, novoAtivo){
+  await chamarRpc('fn_atualizar_pousada', { p_pousada_id: id, p_nome: null, p_ativo: novoAtivo });
+  toast(novoAtivo ? 'Pousada ativada.' : 'Pousada desativada.');
+  carregarPousadas();
+}
+async function desvincularSubadmin(pousadaId){
+  if(!confirm('Desvincular o sub-administrador desta pousada?')) return;
+  await chamarRpc('fn_desvincular_subadm', { p_pousada_id: pousadaId });
+  toast('Sub-administrador desvinculado.');
+  carregarPousadas();
+}
+function abrirVincular(pousadaId){
+  const slot = document.getElementById('vincular-'+pousadaId);
+  slot.innerHTML = `
+    <div class="card-form" style="margin-top:10px;">
+      <h3>Vincular sub-administrador</h3>
+      <div class="field"><label>Buscar por e-mail do hóspede já cadastrado</label>
+        <input type="email" id="busca-email-${pousadaId}" placeholder="email@exemplo.com"></div>
+      <div class="form-actions">
+        <button class="btn secondary" onclick="document.getElementById('vincular-${pousadaId}').innerHTML=''">Cancelar</button>
+        <button class="btn" onclick="buscarEVincular('${pousadaId}')">Buscar e vincular</button>
+      </div>
+      <p class="row-sub" style="margin-top:8px;">A pessoa precisa já ter uma conta criada no PouseApp (como hóspede) antes de virar sub-administradora.</p>
+    </div>`;
+}
+async function buscarEVincular(pousadaId){
+  const email = document.getElementById('busca-email-'+pousadaId).value.trim();
+  if(!email){ toast('Informe um e-mail.', true); return; }
+  const { data: encontrados, error } = await sb.from('perfis').select('id,nome,email,role').eq('email', email).limit(1);
+  if(error || !encontrados || !encontrados.length){ toast('Nenhum usuário encontrado com esse e-mail.', true); return; }
+  const pessoa = encontrados[0];
+  if(pessoa.role !== 'hospede'){ toast('Esse usuário já não é um hóspede comum (role: '+pessoa.role+').', true); return; }
+  if(!confirm(`Tornar ${pessoa.nome} sub-administrador(a) desta pousada?`)) return;
+  await chamarRpc('fn_vincular_subadm', { p_pousada_id: pousadaId, p_perfil_id: pessoa.id });
+  toast('Sub-administrador vinculado.');
+  carregarPousadas();
+}
+
+/* =========================================================
+   SUB ADMIN — Reservas
+   ========================================================= */
+async function carregarReservasSubadmin(){
+  const box = document.getElementById('lista-sa-reservas');
+  if(!minhaPousadaId){ box.innerHTML = '<p class="empty">Você ainda não está vinculado a uma pousada.</p>'; return; }
+  box.innerHTML = '<p class="empty">Carregando...</p>';
+  const { data: reservas, error } = await sb.from('reservas').select('*').eq('pousada_id', minhaPousadaId).order('criado_em', {ascending:false});
+  if(error){ box.innerHTML = '<p class="empty">Erro ao carregar.</p>'; return; }
+  if(!reservas.length){ box.innerHTML = '<p class="empty">Nenhuma reserva ainda.</p>'; return; }
+
+  const hospedeIds = [...new Set(reservas.map(r=>r.hospede_id))];
+  const { data: perfisH } = await sb.from('perfis').select('id,nome,email').in('id', hospedeIds);
+  const nomes = {}; (perfisH||[]).forEach(p=>nomes[p.id]=p.nome);
+
+  box.innerHTML = reservas.map(r=>`
+    <div class="row s-${r.status}">
+      <div class="row-top">
+        <div>
+          <div class="row-title">${escapeHtml(nomes[r.hospede_id]||'Hóspede')}</div>
+          <div class="row-sub">${fmtDataCurta(r.checkin_previsto_em)} → ${fmtDataCurta(r.checkout_previsto_em)} · ${r.quantidade_hospedes} hóspede(s)</div>
+          ${r.observacoes ? `<div class="row-sub">"${escapeHtml(r.observacoes)}"</div>` : ''}
+        </div>
+        <span class="chip">${labelStatus(r.status)}</span>
+      </div>
+      <div class="row-actions">
+        ${r.status==='pendente' ? `
+          <button class="btn small" onclick="atualizarReserva('${r.id}','confirmada')">Confirmar</button>
+          <button class="btn small danger" onclick="atualizarReserva('${r.id}','cancelada')">Recusar</button>` : ''}
+        ${r.status==='confirmada' ? `
+          <button class="btn small" onclick="criarHospedagemDaReserva('${r.id}')">Criar hospedagem</button>
+          <button class="btn small danger" onclick="atualizarReserva('${r.id}','cancelada')">Cancelar</button>` : ''}
+      </div>
+    </div>`).join('');
+}
+async function atualizarReserva(id, status){
+  await chamarRpc('fn_atualizar_reserva', { p_reserva_id: id, p_status: status });
+  toast('Reserva atualizada.');
+  carregarReservasSubadmin();
+}
+async function criarHospedagemDaReserva(id){
+  await chamarRpc('fn_criar_hospedagem_da_reserva', { p_reserva_id: id });
+  toast('Hospedagem criada a partir da reserva.');
+  carregarReservasSubadmin();
+}
+
+/* =========================================================
+   SUB ADMIN — Hospedagens
+   ========================================================= */
+async function carregarHospedagensSubadmin(){
+  const box = document.getElementById('lista-sa-hospedagens');
+  if(!minhaPousadaId){ box.innerHTML = '<p class="empty">Você ainda não está vinculado a uma pousada.</p>'; return; }
+  box.innerHTML = '<p class="empty">Carregando...</p>';
+  const { data: hosp, error } = await sb.from('hospedagens').select('*').eq('pousada_id', minhaPousadaId).order('criado_em', {ascending:false});
+  if(error){ box.innerHTML = '<p class="empty">Erro ao carregar.</p>'; return; }
+  if(!hosp.length){ box.innerHTML = '<p class="empty">Nenhuma hospedagem ainda.</p>'; return; }
+
+  const hospedeIds = [...new Set(hosp.map(h=>h.hospede_id))];
+  const { data: perfisH } = await sb.from('perfis').select('id,nome').in('id', hospedeIds);
+  const nomes = {}; (perfisH||[]).forEach(p=>nomes[p.id]=p.nome);
+
+  box.innerHTML = hosp.map(h=>`
+    <div class="row s-${h.status}">
+      <div class="row-top">
+        <div>
+          <div class="row-title">${escapeHtml(nomes[h.hospede_id]||'Hóspede')}</div>
+          <div class="row-sub">Check-in: ${fmtData(h.checkin_em)}</div>
+          <div class="row-sub">Check-out previsto: ${fmtDataCurta(h.checkout_previsto_em)}</div>
+          ${h.checkout_em ? `<div class="row-sub">Check-out real: ${fmtData(h.checkout_em)}</div>` : ''}
+        </div>
+        <span class="chip">${labelStatus(h.status)}</span>
+      </div>
+      <div class="row-actions">
+        ${h.status==='reservado' ? `
+          <button class="btn small" onclick="atualizarHospedagem('${h.id}','hospedado')">Fazer check-in</button>
+          <button class="btn small danger" onclick="atualizarHospedagem('${h.id}','cancelado')">Cancelar</button>` : ''}
+        ${h.status==='hospedado' ? `
+          <button class="btn small" onclick="atualizarHospedagem('${h.id}','finalizado')">Fazer check-out</button>` : ''}
+      </div>
+    </div>`).join('');
+}
+async function atualizarHospedagem(id, status){
+  await chamarRpc('fn_atualizar_hospedagem', { p_hospedagem_id: id, p_status: status });
+  toast('Hospedagem atualizada.');
+  carregarHospedagensSubadmin();
+}
+
+/* =========================================================
+   SUB ADMIN — Refeições
+   ========================================================= */
+function toggleNovaRefeicao(){
+  const f = document.getElementById('form-nova-refeicao');
+  f.style.display = f.style.display==='none' ? 'block' : 'none';
+}
+async function criarRefeicao(){
+  if(!minhaPousadaId){ toast('Você ainda não está vinculado a uma pousada.', true); return; }
+  const titulo = document.getElementById('nr-titulo').value.trim();
+  const descricao = document.getElementById('nr-descricao').value.trim();
+  const horario = document.getElementById('nr-horario').value;
+  if(!titulo){ toast('Dê um título para a refeição.', true); return; }
+  await chamarRpc('fn_criar_refeicao', {
+    p_pousada_id: minhaPousadaId,
+    p_titulo: titulo,
+    p_descricao: descricao || null,
+    p_horario: horario ? new Date(horario).toISOString() : null
+  });
+  document.getElementById('nr-titulo').value='';
+  document.getElementById('nr-descricao').value='';
+  document.getElementById('nr-horario').value='';
+  toggleNovaRefeicao();
+  toast('Refeição cadastrada.');
+  carregarRefeicoesSubadmin();
+}
+async function carregarRefeicoesSubadmin(){
+  const box = document.getElementById('lista-sa-refeicoes');
+  if(!minhaPousadaId){ box.innerHTML = '<p class="empty">Você ainda não está vinculado a uma pousada.</p>'; return; }
+  box.innerHTML = '<p class="empty">Carregando...</p>';
+  const { data: refs, error } = await sb.from('refeicoes').select('*').eq('pousada_id', minhaPousadaId).order('horario', {ascending:true});
+  if(error){ box.innerHTML = '<p class="empty">Erro ao carregar.</p>'; return; }
+  renderRefeicoes(box, refs);
+}
+
+/* =========================================================
+   HÓSPEDE — Reservas
+   ========================================================= */
+function toggleNovaReserva(){
+  const f = document.getElementById('form-nova-reserva');
+  const abrindo = f.style.display==='none';
+  f.style.display = abrindo ? 'block' : 'none';
+  if(abrindo){
+    carregarPousadasParaReserva();
+    const hoje = new Date().toISOString().slice(0,10);
+    document.getElementById('rr-checkin').min = hoje;
+    document.getElementById('rr-checkout').min = hoje;
+  }
+}
+async function carregarPousadasParaReserva(){
+  const sel = document.getElementById('rr-pousada');
+  sel.innerHTML = '<option>Carregando...</option>';
+  const { data: pousadas, error } = await sb.from('pousadas').select('id,nome').eq('ativo', true).order('nome');
+  if(error || !pousadas.length){ sel.innerHTML = '<option value="">Nenhuma pousada disponível</option>'; return; }
+  sel.innerHTML = pousadas.map(p=>`<option value="${p.id}">${escapeHtml(p.nome)}</option>`).join('');
+}
+async function solicitarReserva(){
+  const pousada_id = document.getElementById('rr-pousada').value;
+  const checkin = document.getElementById('rr-checkin').value;
+  const checkout = document.getElementById('rr-checkout').value;
+  const qtd = parseInt(document.getElementById('rr-qtd').value || '1', 10);
+  const obs = document.getElementById('rr-obs').value.trim();
+  if(!pousada_id || !checkin || !checkout){ toast('Preencha pousada, check-in e check-out.', true); return; }
+  if(checkout <= checkin){ toast('O check-out precisa ser depois do check-in.', true); return; }
+  await chamarRpc('fn_solicitar_reserva', {
+    p_pousada_id: pousada_id,
+    p_checkin: new Date(checkin+'T14:00:00').toISOString(),
+    p_checkout: new Date(checkout+'T12:00:00').toISOString(),
+    p_quantidade_hospedes: qtd,
+    p_observacoes: obs || null
+  });
+  toast('Solicitação enviada.');
+  toggleNovaReserva();
+  carregarReservasHospede();
+}
+async function carregarReservasHospede(){
+  const box = document.getElementById('lista-h-reservas');
+  box.innerHTML = '<p class="empty">Carregando...</p>';
+  const { data: reservas, error } = await sb.from('reservas').select('*, pousadas(nome)').order('criado_em', {ascending:false});
+  if(error){ box.innerHTML = '<p class="empty">Erro ao carregar.</p>'; return; }
+  if(!reservas.length){ box.innerHTML = '<p class="empty">Você ainda não tem reservas.</p>'; return; }
+  box.innerHTML = reservas.map(r=>`
+    <div class="row s-${r.status}">
+      <div class="row-top">
+        <div>
+          <div class="row-title">${escapeHtml(r.pousadas ? r.pousadas.nome : 'Pousada')}</div>
+          <div class="row-sub">${fmtDataCurta(r.checkin_previsto_em)} → ${fmtDataCurta(r.checkout_previsto_em)} · ${r.quantidade_hospedes} hóspede(s)</div>
+        </div>
+        <span class="chip">${labelStatus(r.status)}</span>
+      </div>
+    </div>`).join('');
+}
+
+/* =========================================================
+   HÓSPEDE — Hospedagem
+   ========================================================= */
+async function carregarHospedagemHospede(){
+  const box = document.getElementById('lista-h-hospedagem');
+  box.innerHTML = '<p class="empty">Carregando...</p>';
+  const { data: hosp, error } = await sb.from('hospedagens').select('*, pousadas(nome)').order('criado_em', {ascending:false});
+  if(error){ box.innerHTML = '<p class="empty">Erro ao carregar.</p>'; return; }
+  if(!hosp.length){ box.innerHTML = '<p class="empty">Nenhuma hospedagem encontrada.</p>'; return; }
+  box.innerHTML = hosp.map(h=>`
+    <div class="row s-${h.status}">
+      <div class="row-top">
+        <div>
+          <div class="row-title">${escapeHtml(h.pousadas ? h.pousadas.nome : 'Pousada')}</div>
+          <div class="row-sub">Check-in: ${fmtData(h.checkin_em)}</div>
+          <div class="row-sub">Check-out previsto: ${fmtDataCurta(h.checkout_previsto_em)}</div>
+          ${h.checkout_em ? `<div class="row-sub">Check-out real: ${fmtData(h.checkout_em)}</div>` : ''}
+        </div>
+        <span class="chip">${labelStatus(h.status)}</span>
+      </div>
+    </div>`).join('');
+}
+
+/* =========================================================
+   HÓSPEDE — Refeições (só da pousada onde está "hospedado" agora)
+   ========================================================= */
+async function carregarRefeicoesHospede(){
+  const box = document.getElementById('lista-h-refeicoes');
+  box.innerHTML = '<p class="empty">Carregando...</p>';
+  const { data: ativa } = await sb.from('hospedagens').select('pousada_id').eq('status','hospedado').limit(1).maybeSingle();
+  if(!ativa){ box.innerHTML = '<p class="empty">Você precisa estar com check-in feito em uma pousada para ver as refeições.</p>'; return; }
+  const { data: refs, error } = await sb.from('refeicoes').select('*').eq('pousada_id', ativa.pousada_id).order('horario', {ascending:true});
+  if(error){ box.innerHTML = '<p class="empty">Erro ao carregar.</p>'; return; }
+  renderRefeicoes(box, refs);
+}
+function renderRefeicoes(box, refs){
+  if(!refs || !refs.length){ box.innerHTML = '<p class="empty">Nenhuma refeição cadastrada ainda.</p>'; return; }
+  box.innerHTML = refs.filter(r=>r.ativo!==false).map(r=>`
+    <div class="row">
+      <div class="row-top">
+        <div>
+          <div class="row-title">${escapeHtml(r.titulo)}</div>
+          ${r.descricao ? `<div class="row-sub">${escapeHtml(r.descricao)}</div>` : ''}
+        </div>
+        ${r.horario ? `<span class="chip">${fmtData(r.horario)}</span>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+/* =========================================================
+   Chat (realtime)
+   ========================================================= */
+async function abrirChat(quem){
+  let pousadaId = null;
+  if(quem==='sa'){
+    pousadaId = minhaPousadaId;
+    if(!pousadaId){ document.getElementById('chat-list-sa').innerHTML='<p class="empty">Você ainda não está vinculado a uma pousada.</p>'; return; }
+  } else {
+    const { data: ativa } = await sb.from('hospedagens').select('pousada_id').eq('status','hospedado').limit(1).maybeSingle();
+    if(!ativa){ document.getElementById('chat-list-h').innerHTML='<p class="empty">O chat fica disponível depois do check-in.</p>'; return; }
+    pousadaId = ativa.pousada_id;
+  }
+
+  const listId = quem==='sa' ? 'chat-list-sa' : 'chat-list-h';
+  await carregarMensagens(pousadaId, listId);
+
+  if(chatChannel){ sb.removeChannel(chatChannel); chatChannel = null; }
+  chatChannel = sb.channel('chat-'+pousadaId)
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'mensagens_chat', filter:`pousada_id=eq.${pousadaId}` }, payload=>{
+      adicionarMensagemNaTela(payload.new, listId);
+    })
+    .subscribe();
+
+  window._chatPousadaAtual = pousadaId;
+}
+async function carregarMensagens(pousadaId, listId){
+  const box = document.getElementById(listId);
+  box.innerHTML = '<p class="empty">Carregando conversa...</p>';
+  const { data: msgs, error } = await sb.from('mensagens_chat').select('*').eq('pousada_id', pousadaId).order('criado_em', {ascending:true}).limit(200);
+  if(error){ box.innerHTML = '<p class="empty">Erro ao carregar o chat.</p>'; return; }
+  box.innerHTML = '';
+  msgs.forEach(m=>adicionarMensagemNaTela(m, listId));
+}
+function adicionarMensagemNaTela(m, listId){
+  const box = document.getElementById(listId);
+  if(box.querySelector('.empty')) box.innerHTML = '';
+  const mine = m.remetente_id === perfil.id;
+  const div = document.createElement('div');
+  div.className = 'msg' + (mine ? ' mine' : '');
+  div.innerHTML = `<div>${escapeHtml(m.mensagem)}</div><div class="meta">${fmtData(m.criado_em)}</div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+async function enviarMensagem(quem){
+  const inputId = quem==='sa' ? 'chat-input-sa' : 'chat-input-h';
+  const input = document.getElementById(inputId);
+  const texto = input.value.trim();
+  if(!texto) return;
+  const pousadaId = window._chatPousadaAtual;
+  if(!pousadaId){ toast('Chat indisponível no momento.', true); return; }
+  await chamarRpc('fn_enviar_mensagem', { p_pousada_id: pousadaId, p_mensagem: texto });
+  input.value = '';
+}
+
+/* =========================================================
+   Helpers de exibição
+   ========================================================= */
+function labelStatus(s){
+  const map = {
+    pendente:'Pendente', confirmada:'Confirmada', cancelada:'Cancelada', concluida:'Concluída',
+    reservado:'Reservado', hospedado:'Hospedado', finalizado:'Finalizado', cancelado:'Cancelado'
+  };
+  return map[s] || s;
+}
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s){ return escapeHtml(s).replace(/"/g,'&quot;'); }
+
+/* Checa sessão já existente ao carregar a página */
+sb.auth.getSession().then(({data})=>{
+  if(data.session) iniciarApp(data.session);
+});
+</script>
+</body>
+</html>
