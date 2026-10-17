@@ -168,6 +168,16 @@
   .chat-send{display:flex;gap:8px;position:sticky;bottom:0;background:var(--paper);padding-top:6px;}
   .chat-send input{flex:1;}
   .chat-send .btn{width:auto;padding:12px 16px;}
+
+  .metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .metric-card{
+    background:var(--card);border:1px solid var(--line);border-radius:8px;
+    padding:14px 14px 12px;
+  }
+  .metric-card .num{font-family:'Fraunces',serif;font-size:26px;font-weight:600;line-height:1;}
+  .metric-card .label{font-size:12.5px;color:var(--ink-soft);margin-top:5px;}
+  .metric-section-label{font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin:18px 0 8px;}
+  .metric-section-label:first-child{margin-top:0;}
 </style>
 </head>
 <body>
@@ -312,6 +322,12 @@
         <input type="text" id="chat-input-h" placeholder="Escreva uma mensagem...">
         <button class="btn" onclick="enviarMensagem('h')">Enviar</button>
       </div>
+    </section>
+
+    <!-- MÉTRICAS (super admin e sub admin) -->
+    <section class="view" id="view-metricas">
+      <h2 class="section-title">Métricas</h2>
+      <div id="metricas-grid"></div>
     </section>
   </main>
 
@@ -478,9 +494,9 @@ function montarTabbar(){
   const bar = document.getElementById('tabbar');
   let tabs = [];
   if(perfil.role === 'super_admin'){
-    tabs = [['pousadas','Pousadas']];
+    tabs = [['pousadas','Pousadas'],['metricas','Métricas']];
   } else if(perfil.role === 'sub_adm'){
-    tabs = [['sa-reservas','Reservas'],['sa-hospedagens','Hospedagens'],['sa-refeicoes','Refeições'],['sa-chat','Chat']];
+    tabs = [['sa-reservas','Reservas'],['sa-hospedagens','Hospedagens'],['sa-refeicoes','Refeições'],['sa-chat','Chat'],['metricas','Métricas']];
   } else {
     tabs = [['h-reservas','Reservas'],['h-hospedagem','Hospedagem'],['h-refeicoes','Refeições'],['h-chat','Chat']];
   }
@@ -501,6 +517,7 @@ function trocarView(id){
   if(id==='h-hospedagem') carregarHospedagemHospede();
   if(id==='h-refeicoes') carregarRefeicoesHospede();
   if(id==='h-chat') abrirChat('h');
+  if(id==='metricas') carregarMetricas();
 }
 
 /* =========================================================
@@ -829,6 +846,68 @@ function renderRefeicoes(box, refs){
         ${r.horario ? `<span class="chip">${fmtData(r.horario)}</span>` : ''}
       </div>
     </div>`).join('');
+}
+
+/* =========================================================
+   Métricas
+   ========================================================= */
+async function contar(tabela, filtros){
+  let q = sb.from(tabela).select('*', { count: 'exact', head: true });
+  (filtros||[]).forEach(([campo, valor]) => { q = q.eq(campo, valor); });
+  const { count, error } = await q;
+  return error ? 0 : (count || 0);
+}
+function cardMetrica(num, label){
+  return `<div class="metric-card"><div class="num">${num}</div><div class="label">${label}</div></div>`;
+}
+async function carregarMetricas(){
+  const box = document.getElementById('metricas-grid');
+  box.innerHTML = '<p class="empty">Carregando...</p>';
+
+  if(perfil.role === 'super_admin'){
+    const [pousadasTotal, pousadasAtivas, subAdmins, hospedesCadastrados, hospedadosAgora, reservasPendentes] = await Promise.all([
+      contar('pousadas'),
+      contar('pousadas', [['ativo', true]]),
+      contar('perfis', [['role','sub_adm'],['ativo', true]]),
+      contar('perfis', [['role','hospede']]),
+      contar('hospedagens', [['status','hospedado']]),
+      contar('reservas', [['status','pendente']])
+    ]);
+    box.innerHTML = `
+      <div class="metric-section-label">Rede de pousadas</div>
+      <div class="metrics-grid">
+        ${cardMetrica(pousadasAtivas, 'Pousadas ativas')}
+        ${cardMetrica(pousadasTotal, 'Pousadas no total')}
+        ${cardMetrica(subAdmins, 'Sub-admins ativos (limite 10)')}
+        ${cardMetrica(hospedesCadastrados, 'Hóspedes cadastrados')}
+      </div>
+      <div class="metric-section-label">Agora, em todas as pousadas</div>
+      <div class="metrics-grid">
+        ${cardMetrica(hospedadosAgora, 'Hóspedes hospedados agora')}
+        ${cardMetrica(reservasPendentes, 'Reservas aguardando resposta')}
+      </div>`;
+    return;
+  }
+
+  if(perfil.role === 'sub_adm'){
+    if(!minhaPousadaId){ box.innerHTML = '<p class="empty">Você ainda não está vinculado a uma pousada.</p>'; return; }
+    const [pousada, hospedadosAgora, reservasPendentes, reservasConfirmadas, refeicoesCount] = await Promise.all([
+      sb.from('pousadas').select('limite_hospedes').eq('id', minhaPousadaId).single().then(r=>r.data),
+      contar('hospedagens', [['pousada_id', minhaPousadaId],['status','hospedado']]),
+      contar('reservas', [['pousada_id', minhaPousadaId],['status','pendente']]),
+      contar('reservas', [['pousada_id', minhaPousadaId],['status','confirmada']]),
+      contar('refeicoes', [['pousada_id', minhaPousadaId]])
+    ]);
+    const limite = pousada ? pousada.limite_hospedes : 30;
+    box.innerHTML = `
+      <div class="metric-section-label">Sua pousada agora</div>
+      <div class="metrics-grid">
+        ${cardMetrica(hospedadosAgora+' / '+limite, 'Hóspedes hospedados')}
+        ${cardMetrica(reservasPendentes, 'Reservas aguardando resposta')}
+        ${cardMetrica(reservasConfirmadas, 'Confirmadas, aguardando check-in')}
+        ${cardMetrica(refeicoesCount, 'Refeições cadastradas')}
+      </div>`;
+  }
 }
 
 /* =========================================================
