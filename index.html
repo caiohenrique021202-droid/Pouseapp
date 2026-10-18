@@ -220,6 +220,19 @@
   .occupancy-bar{height:9px;border-radius:99px;background:var(--paper-dim);overflow:hidden;margin-top:10px;}
   .occupancy-bar .fill{height:100%;background:linear-gradient(90deg, var(--green), var(--green-dark));border-radius:99px;transition:width .4s ease;}
 
+  .q-livre{border-left-color:var(--green)!important;}
+  .q-livre .chip{background:var(--green-tint);color:var(--green-dark);}
+  .q-ocupado{border-left-color:var(--brick)!important;}
+  .q-ocupado .chip{background:var(--brick-tint);color:var(--brick);}
+
+  .cal-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .cal-label{width:64px;flex-shrink:0;font-size:12.5px;font-weight:600;}
+  .cal-days{display:flex;gap:3px;overflow-x:auto;flex:1;}
+  .cal-cell{width:26px;height:34px;flex-shrink:0;border-radius:5px;display:flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:700;color:#fff;}
+  .cal-header{display:flex;gap:3px;margin:0 0 8px 72px;}
+  .cal-header span{width:26px;flex-shrink:0;font-size:9.5px;text-align:center;color:var(--ink-soft);}
+
   .nfc-box{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);}
   .nfc-label{font-size:11.5px;color:var(--ink-soft);margin-bottom:5px;font-weight:600;}
   .nfc-row{display:flex;gap:8px;}
@@ -348,6 +361,13 @@
       </div>
       <p class="row-sub" style="margin:-6px 0 16px;">Grave o link de cada quarto num chip NFC e cole na porta. O hóspede toca ao chegar (check-in automático) e toca de novo ao sair (check-out automático).</p>
       <div id="lista-quartos"></div>
+    </section>
+
+    <!-- SUB ADMIN: calendário -->
+    <section class="view" id="view-sa-calendario">
+      <h2 class="section-title">Calendário</h2>
+      <p class="row-sub" style="margin:-6px 0 14px;">Próximos 14 dias. Verde = livre, vermelho = ocupado/reservado.</p>
+      <div id="calendario-conteudo"></div>
     </section>
 
     <!-- SUB ADMIN: hospedagens -->
@@ -893,13 +913,13 @@ async function carregarQuartos(){
   if(!quartos.length){ box.innerHTML = '<p class="empty">Nenhum quarto cadastrado ainda.</p>'; return; }
 
   box.innerHTML = quartos.map(q=>`
-    <div class="row ${q.status==='ocupado' ? 's-hospedado' : 's-reservado'}">
+    <div class="row ${q.status==='ocupado' ? 'q-ocupado' : 'q-livre'}">
       <div class="row-top">
         <div>
           <div class="row-title">Quarto ${escapeHtml(q.numero)}</div>
           <div class="row-sub">R$ ${Number(q.valor_diaria).toFixed(2)} / diária <button class="btn small secondary" style="padding:3px 9px;font-size:11px;margin-left:6px;" onclick="editarPrecoQuarto('${q.id}', ${q.valor_diaria})">Editar</button></div>
         </div>
-        <span class="chip">${q.status==='ocupado' ? 'Ocupado' : 'Livre'}</span>
+        <span class="chip">${q.status==='ocupado' ? '● Ocupado' : '● Livre'}</span>
       </div>
       <div class="nfc-box">
         <div class="nfc-label">Link do quarto (gravar no chip NFC da porta)</div>
@@ -933,6 +953,41 @@ async function vincularQuartoReserva(reservaId, selectEl){
     toast('Quarto vinculado à reserva.');
   }catch(e){ selectEl.value = ''; }
   carregarReservasSubadmin();
+}
+
+/* =========================================================
+   SUB ADMIN — Calendário (estilo Booking: grade de disponibilidade)
+   ========================================================= */
+async function carregarCalendario(){
+  const box = document.getElementById('calendario-conteudo');
+  if(!minhaPousadaId){ box.innerHTML = '<p class="empty">Você ainda não está vinculado a uma pousada.</p>'; return; }
+  box.innerHTML = '<p class="empty">Carregando...</p>';
+
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const dias = Array.from({length:14}, (_,i)=>{ const d = new Date(hoje); d.setDate(d.getDate()+i); return d; });
+
+  const [{ data: quartos }, { data: reservas }] = await Promise.all([
+    sb.from('quartos').select('id,numero').eq('pousada_id', minhaPousadaId).order('numero'),
+    sb.from('reservas').select('quarto_id,checkin_previsto_em,checkout_previsto_em').eq('pousada_id', minhaPousadaId).in('status',['confirmada','concluida'])
+  ]);
+  if(!quartos || !quartos.length){ box.innerHTML = '<p class="empty">Cadastre quartos primeiro, na aba Quartos.</p>'; return; }
+
+  function ocupadoNoDia(quartoId, dia){
+    return (reservas||[]).some(r => r.quarto_id===quartoId &&
+      new Date(r.checkin_previsto_em) <= dia && dia < new Date(r.checkout_previsto_em));
+  }
+
+  const header = `<div class="cal-header">${dias.map(d=>`<span>${d.getDate()}/${d.getMonth()+1}</span>`).join('')}</div>`;
+  const linhas = quartos.map(q => `
+    <div class="cal-row">
+      <div class="cal-label">Quarto ${escapeHtml(q.numero)}</div>
+      <div class="cal-days">${dias.map(d=>{
+        const ocup = ocupadoNoDia(q.id, d);
+        return `<div class="cal-cell" style="background:${ocup?'var(--brick)':'var(--green)'}">${ocup?'●':''}</div>`;
+      }).join('')}</div>
+    </div>`).join('');
+
+  box.innerHTML = header + linhas;
 }
 
 /* =========================================================
@@ -1351,21 +1406,27 @@ const I18N = {
     semMsg:'Nenhuma mensagem ainda.', digiteNome:'Digite seu nome antes de enviar.',
     bemVindo:'Bem-vindo(a)! 🎉', checkinFeito:n=>`Check-in feito no quarto ${n}.`,
     ateProxima:'Até a próxima! 👋', checkoutFeito:n=>`Check-out do quarto ${n} concluído.`,
-    processando:'Processando...', carregando:'Carregando...' },
+    processando:'Processando...', carregando:'Carregando...',
+    reservarMais:'Quero ficar mais tempo / reservar de novo',
+    faleParaReservar:'Fale com a recepção pelo chat pra estender ou fazer uma nova reserva.' },
   en: { estadia:'Your stay', checkin:'Check-in', checkoutPrev:'Expected check-out', refeicoes:'Meals',
     semRefeicao:'No meals added yet.', fale:'Chat with reception', seuNome:'Your name',
     comoChamar:'What should we call you?', escreva:'Write a message...', enviar:'Send',
     semMsg:'No messages yet.', digiteNome:'Enter your name before sending.',
     bemVindo:'Welcome! 🎉', checkinFeito:n=>`Check-in completed in room ${n}.`,
     ateProxima:'See you next time! 👋', checkoutFeito:n=>`Check-out from room ${n} completed.`,
-    processando:'Processing...', carregando:'Loading...' },
+    processando:'Processing...', carregando:'Loading...',
+    reservarMais:'I want to stay longer / book again',
+    faleParaReservar:'Chat with reception to extend your stay or make a new booking.' },
   es: { estadia:'Tu estadía', checkin:'Check-in', checkoutPrev:'Check-out previsto', refeicoes:'Comidas',
     semRefeicao:'Aún no hay comidas registradas.', fale:'Habla con recepción', seuNome:'Tu nombre',
     comoChamar:'¿Cómo te llamamos?', escreva:'Escribe un mensaje...', enviar:'Enviar',
     semMsg:'Aún no hay mensajes.', digiteNome:'Escribe tu nombre antes de enviar.',
     bemVindo:'¡Bienvenido(a)! 🎉', checkinFeito:n=>`Check-in realizado en la habitación ${n}.`,
     ateProxima:'¡Hasta la próxima! 👋', checkoutFeito:n=>`Check-out de la habitación ${n} completado.`,
-    processando:'Procesando...', carregando:'Cargando...' }
+    processando:'Procesando...', carregando:'Cargando...',
+    reservarMais:'Quiero quedarme más / reservar de nuevo',
+    faleParaReservar:'Habla con recepción por el chat para extender o hacer una nueva reserva.' }
 };
 let portalLang = localStorage.getItem('pouseapp_lang') || 'pt';
 function t(key){ const v = I18N[portalLang][key]; return v; }
@@ -1408,29 +1469,47 @@ async function abrirPortalHospede(token){
 
   conteudo.innerHTML = `
     ${seletorIdiomas()}
-    <div class="row">
-      <div class="row-title">${t('estadia')}</div>
-      <div class="row-sub">${t('checkin')}: ${fmtData(dados.checkin_em)}</div>
-      <div class="row-sub">${t('checkoutPrev')}: ${fmtDataCurta(dados.checkout_previsto_em)}</div>
+    <div class="auth-tabs" id="portal-tabs">
+      <button class="active" onclick="portalTab('estadia')">${t('estadia')}</button>
+      <button onclick="portalTab('refeicoes')">${t('refeicoes')}</button>
+      <button onclick="portalTab('chat')">${t('fale')}</button>
     </div>
 
-    <h2 class="section-title" style="margin-top:22px;">${t('refeicoes')}</h2>
-    ${refs}
-
-    <h2 class="section-title" style="margin-top:22px;">${t('fale')}</h2>
-    <div class="field" id="portal-nome-field">
-      <label>${t('seuNome')}</label>
-      <input type="text" id="portal-nome-input" placeholder="${t('comoChamar')}">
+    <div id="portal-sec-estadia">
+      <div class="row">
+        <div class="row-title">${t('estadia')}</div>
+        <div class="row-sub">${t('checkin')}: ${fmtData(dados.checkin_em)}</div>
+        <div class="row-sub">${t('checkoutPrev')}: ${fmtDataCurta(dados.checkout_previsto_em)}</div>
+      </div>
+      <button class="fab-add" style="margin-top:14px;" onclick="portalTab('chat')">${t('reservarMais')}</button>
+      <p class="row-sub">${t('faleParaReservar')}</p>
     </div>
-    <div class="chat-list" id="portal-chat-list"></div>
-    <div class="chat-send">
-      <input type="text" id="portal-chat-input" placeholder="${t('escreva')}">
-      <button class="btn" onclick="portalEnviarMensagem()">${t('enviar')}</button>
+
+    <div id="portal-sec-refeicoes" style="display:none;">${refs}</div>
+
+    <div id="portal-sec-chat" style="display:none;">
+      <div class="field" id="portal-nome-field">
+        <label>${t('seuNome')}</label>
+        <input type="text" id="portal-nome-input" placeholder="${t('comoChamar')}">
+      </div>
+      <div class="chat-list" id="portal-chat-list"></div>
+      <div class="chat-send">
+        <input type="text" id="portal-chat-input" placeholder="${t('escreva')}">
+        <button class="btn" onclick="portalEnviarMensagem()">${t('enviar')}</button>
+      </div>
     </div>`;
 
   await portalCarregarChat();
   clearInterval(portalPollTimer);
   portalPollTimer = setInterval(portalCarregarChat, 5000);
+}
+function portalTab(nome){
+  ['estadia','refeicoes','chat'].forEach(s=>{
+    document.getElementById('portal-sec-'+s).style.display = s===nome ? 'block' : 'none';
+  });
+  document.querySelectorAll('#portal-tabs button').forEach((b,i)=>{
+    b.classList.toggle('active', ['estadia','refeicoes','chat'][i]===nome);
+  });
 }
 
 async function chamarRpcAnon(nome, args){
