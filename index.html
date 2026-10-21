@@ -114,7 +114,13 @@
     padding-top:calc(14px + env(safe-area-inset-top,0px));
     display:flex;align-items:center;justify-content:space-between;
   }
-  header.topbar .who{display:flex;flex-direction:column;}
+  header.topbar{gap:12px;}
+  .hamburger{
+    background:none;border:none;box-shadow:none;padding:6px;margin:0;
+    display:flex;flex-direction:column;gap:4px;width:22px;
+  }
+  .hamburger span{display:block;height:2px;background:var(--ink);border-radius:2px;}
+  header.topbar .who{display:flex;flex-direction:column;margin-right:auto;}
   header.topbar .who .nome{font-weight:600;font-size:15px;}
   header.topbar .who .papel{
     font-size:10.5px;color:var(--green-dark);font-weight:700;
@@ -186,6 +192,29 @@
     width:22px;height:3px;border-radius:0 0 4px 4px;background:var(--green);
   }
 
+  #drawer-overlay{
+    position:fixed;inset:0;background:rgba(39,38,31,.35);z-index:19;
+    opacity:0;pointer-events:none;transition:opacity .2s ease;
+  }
+  #drawer-overlay.open{opacity:1;pointer-events:auto;}
+  #drawer{
+    position:fixed;top:0;left:0;bottom:0;width:78%;max-width:300px;z-index:20;
+    background:var(--card);box-shadow:var(--shadow-lift);
+    padding-top:calc(18px + env(safe-area-inset-top,0px));padding-bottom:env(safe-area-inset-bottom,0px);
+    transform:translateX(-105%);transition:transform .25s ease;
+    display:flex;flex-direction:column;
+  }
+  #drawer.open{transform:translateX(0);}
+  #drawer .drawer-brand{display:flex;align-items:center;gap:10px;padding:0 18px 18px;border-bottom:1px solid var(--line);margin-bottom:8px;}
+  #drawer .drawer-brand .mark{width:30px;height:30px;border-radius:8px;background:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  #drawer .drawer-brand .mark svg{width:16px;height:16px;}
+  #drawer button.item{
+    display:flex;align-items:center;width:100%;text-align:left;padding:13px 18px;
+    background:none;border:none;box-shadow:none;border-radius:0;font-size:15px;font-weight:600;color:var(--ink-soft);
+  }
+  #drawer button.item.active{color:var(--green-dark);background:var(--green-tint);}
+  #drawer button.item:active{background:var(--paper-dim);}
+
   #toast{
     position:fixed;left:16px;right:16px;bottom:calc(78px + env(safe-area-inset-bottom,0px));
     display:none;z-index:50;animation:toast-up .25s ease;
@@ -220,10 +249,42 @@
   .occupancy-bar{height:9px;border-radius:99px;background:var(--paper-dim);overflow:hidden;margin-top:10px;}
   .occupancy-bar .fill{height:100%;background:linear-gradient(90deg, var(--green), var(--green-dark));border-radius:99px;transition:width .4s ease;}
 
-  .q-livre{border-left-color:var(--green)!important;}
-  .q-livre .chip{background:var(--green-tint);color:var(--green-dark);}
-  .q-ocupado{border-left-color:var(--brick)!important;}
-  .q-ocupado .chip{background:var(--brick-tint);color:var(--brick);}
+  .quartos-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .q-card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);}
+  .q-card .q-foto{width:100%;height:84px;object-fit:cover;background:var(--paper-dim);display:block;}
+  .q-card .q-foto-vazia{width:100%;height:84px;background:var(--paper-dim);display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:11px;}
+  .q-card .q-body{padding:12px;}
+  .q-status-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 9px;border-radius:99px;margin-bottom:8px;}
+  .q-livre .q-status-badge{background:var(--green-tint);color:var(--green-dark);}
+  .q-ocupado .q-status-badge{background:var(--brick-tint);color:var(--brick);}
+  .q-limpeza .q-status-badge{background:var(--brass-tint);color:var(--brass);}
+  .q-manutencao .q-status-badge{background:var(--paper-dim);color:var(--ink-soft);}
+  .q-card .q-numero{font-weight:600;font-size:15px;margin-bottom:2px;}
+  .q-card .q-preco{font-size:11.5px;color:var(--ink-soft);margin-bottom:10px;}
+  .q-card .q-acoes{display:flex;flex-direction:column;gap:6px;}
+  .q-card .q-acoes .btn{font-size:12.5px;padding:8px 10px;}
+
+  .room-summary{display:flex;gap:16px;margin-bottom:16px;}
+  .room-summary div{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--ink-soft);}
+  .room-summary .dot{width:9px;height:9px;border-radius:50%;}
+  .room-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
+  .room-card{border-radius:14px;overflow:hidden;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);}
+  .room-card .photo{
+    height:84px;background-size:cover;background-position:center;background-color:var(--paper-dim);
+    position:relative;display:flex;align-items:flex-start;justify-content:flex-end;padding:8px;
+  }
+  .room-card .photo.no-photo{background-image:none;}
+  .room-card .status-pill{
+    padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;
+    display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.92);backdrop-filter:blur(4px);
+  }
+  .room-card .status-pill .dot{width:7px;height:7px;border-radius:50%;}
+  .room-card .body{padding:10px 12px 12px;}
+  .room-card .numero{font-family:'Fraunces',serif;font-size:17px;font-weight:600;line-height:1.1;}
+  .room-card .guest{font-size:11.5px;color:var(--ink-soft);margin-top:3px;min-height:14px;}
+  .room-card .price{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+  .room-card .body-actions{display:flex;gap:6px;margin-top:9px;}
+  .room-card .body-actions .btn{font-size:11px;padding:7px 8px;}
 
   .cal-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
   .cal-label{width:64px;flex-shrink:0;font-size:12.5px;font-weight:600;}
@@ -294,12 +355,23 @@
 
 <div id="app-screen">
   <header class="topbar">
-    <div class="who">
-      <span class="nome" id="hdr-nome">—</span>
-      <span class="papel" id="hdr-papel">—</span>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button id="btn-menu" onclick="toggleMenu()" style="box-shadow:none;background:var(--paper-dim);border-radius:8px;padding:8px 10px;color:var(--ink);font-size:17px;">☰</button>
+      <div class="who">
+        <span class="nome" id="hdr-nome">—</span>
+        <span class="papel" id="hdr-papel">—</span>
+      </div>
     </div>
     <button onclick="doLogout()">Sair</button>
   </header>
+
+  <div id="menu-overlay" onclick="toggleMenu()" style="display:none;position:fixed;inset:0;background:rgba(39,38,31,.35);z-index:9;"></div>
+  <nav id="menu-painel" style="display:none;position:fixed;top:0;left:0;bottom:0;width:240px;background:var(--card);
+    z-index:10;box-shadow:var(--shadow-lift);padding:calc(16px + env(safe-area-inset-top,0px)) 14px 16px;
+    overflow-y:auto;">
+    <div class="brand" style="font-size:18px;margin-bottom:16px;padding-left:4px;">PouseApp</div>
+    <div id="menu-itens"></div>
+  </nav>
 
   <main>
     <!-- SUPER ADMIN -->
@@ -337,7 +409,12 @@
         <div class="field"><label>Check-out</label><input type="date" id="rm-checkout"></div>
         <div class="field"><label>Quantidade de hóspedes</label><input type="number" id="rm-qtd" min="1" max="30" value="1"></div>
         <div class="field"><label>Observações (opcional)</label><input type="text" id="rm-obs"></div>
-        <div class="field"><label>Valor da diária (R$)</label><input type="number" id="rm-diaria" min="0" step="0.01" value="0"></div>
+        <div class="field"><label>Valor da diária (R$) — deixe 0 se o quarto já tem preço</label><input type="number" id="rm-diaria" min="0" step="0.01" value="0"></div>
+        <div class="field"><label>Quarto (opcional, já vincula)</label><select id="rm-quarto"><option value="">Vincular depois</option></select></div>
+        <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--ink-soft);margin:10px 0;">
+          <input type="checkbox" id="rm-lgpd" style="margin-top:3px;">
+          <span>Confirmo que tenho autorização do hóspede pra guardar nome e contato no sistema (LGPD).</span>
+        </label>
         <div class="form-actions">
           <button class="btn secondary" onclick="toggleNovaReservaManual()">Cancelar</button>
           <button class="btn" onclick="criarReservaManual()">Criar</button>
@@ -349,11 +426,20 @@
     <!-- SUB ADMIN: quartos -->
     <section class="view" id="view-sa-quartos">
       <h2 class="section-title">Quartos</h2>
+      <div class="card-form">
+        <h3>Detalhes da pousada</h3>
+        <div class="field"><label>Descrição</label><input type="text" id="pd-descricao" placeholder="Fale sobre a pousada..."></div>
+        <div class="field"><label>Endereço</label><input type="text" id="pd-endereco"></div>
+        <div class="field"><label>Comodidades</label><input type="text" id="pd-comodidades" placeholder="Wi-Fi, café da manhã, piscina..."></div>
+        <div class="field"><label>Foto de capa</label><input type="file" accept="image/*" id="pd-foto"></div>
+        <button class="btn" onclick="salvarDetalhesPousada()">Salvar</button>
+      </div>
       <button class="fab-add" onclick="toggleNovoQuarto()">+ Novo quarto</button>
       <div id="form-novo-quarto" class="card-form" style="display:none">
         <h3>Novo quarto</h3>
         <div class="field"><label>Número / nome do quarto</label><input type="text" id="nq-numero" placeholder="Ex: 12, Suíte Mar..."></div>
         <div class="field"><label>Valor da diária (R$)</label><input type="number" id="nq-diaria" min="0" step="0.01" value="0"></div>
+        <div class="field"><label>Diária de sexta/sábado (R$, opcional)</label><input type="number" id="nq-diaria-fds" min="0" step="0.01" placeholder="Deixe vazio pra usar a diária normal"></div>
         <div class="form-actions">
           <button class="btn secondary" onclick="toggleNovoQuarto()">Cancelar</button>
           <button class="btn" onclick="criarQuarto()">Criar</button>
@@ -458,7 +544,7 @@
     </section>
   </main>
 
-  <nav class="tabbar" id="tabbar"></nav>
+
 </div>
 
 <div id="portal-screen">
@@ -629,7 +715,7 @@ async function iniciarApp(session){
 }
 
 function montarTabbar(){
-  const bar = document.getElementById('tabbar');
+  const bar = document.getElementById('menu-itens');
   let tabs = [];
   if(perfil.role === 'super_admin'){
     tabs = [['pousadas','Pousadas'],['metricas','Métricas'],['relatorios','Relatórios']];
@@ -638,17 +724,27 @@ function montarTabbar(){
   } else {
     tabs = [['h-reservas','Reservas'],['h-hospedagem','Hospedagem'],['h-refeicoes','Refeições'],['h-chat','Chat']];
   }
-  bar.innerHTML = tabs.map(([id,label])=>`<button data-tab="${id}" onclick="trocarView('${id}')">${label}</button>`).join('');
+  bar.innerHTML = tabs.map(([id,label])=>`<button class="menu-item" data-tab="${id}" onclick="trocarView('${id}');toggleMenu();" style="display:block;width:100%;text-align:left;box-shadow:none;background:none;border:none;border-radius:8px;padding:12px 10px;font-size:15px;font-weight:600;color:var(--ink-soft);">${label}</button>`).join('');
+}
+function toggleMenu(){
+  const abrindo = document.getElementById('menu-painel').style.display === 'none';
+  document.getElementById('menu-painel').style.display = abrindo ? 'block' : 'none';
+  document.getElementById('menu-overlay').style.display = abrindo ? 'block' : 'none';
 }
 
 function trocarView(id){
   document.querySelectorAll('section.view').forEach(s=>s.classList.remove('active'));
   document.getElementById('view-'+id).classList.add('active');
-  document.querySelectorAll('nav.tabbar button').forEach(b=>b.classList.toggle('active', b.dataset.tab===id));
+  document.querySelectorAll('#menu-itens button').forEach(b=>{
+    const ativo = b.dataset.tab===id;
+    b.classList.toggle('active', ativo);
+    b.style.background = ativo ? 'var(--green-tint)' : 'none';
+    b.style.color = ativo ? 'var(--green-dark)' : 'var(--ink-soft)';
+  });
 
   if(id==='pousadas'){ carregarPousadas(); carregarSuperAdmins(); }
   if(id==='sa-reservas') carregarReservasSubadmin();
-  if(id==='sa-quartos') carregarQuartos();
+  if(id==='sa-quartos'){ carregarQuartos(); carregarDetalhesPousada(); }
   if(id==='sa-calendario') carregarCalendario();
   if(id==='sa-hospedagens') carregarHospedagensSubadmin();
   if(id==='sa-refeicoes') carregarRefeicoesSubadmin();
@@ -700,12 +796,14 @@ async function carregarPousadas(){
           <div class="row-title">${escapeHtml(p.nome)}</div>
           <div class="row-sub">${sub ? 'Sub-admin: '+escapeHtml(sub.nome) : 'Sem sub-administrador'}</div>
           <div class="row-sub">Limite: ${p.limite_hospedes} hóspedes</div>
+          <div class="row-sub">Assinatura: <strong>${labelPlano(p.plano_status)}</strong> · R$ ${Number(p.plano_valor_mensal).toFixed(2)}/mês${p.plano_status==='trial'&&p.plano_trial_fim?` · grátis até ${fmtDataCurta(p.plano_trial_fim)}`:''}</div>
         </div>
         <span class="chip">${p.ativo?'Ativa':'Inativa'}</span>
       </div>
       <div class="row-actions">
         <button class="btn small secondary" onclick="renomearPousada('${p.id}','${escapeAttr(p.nome)}')">Renomear</button>
         <button class="btn small secondary" onclick="alternarAtivoPousada('${p.id}', ${!p.ativo})">${p.ativo?'Desativar':'Ativar'}</button>
+        <button class="btn small secondary" onclick="gerenciarPlano('${p.id}','${p.plano_status}')">Assinatura</button>
         ${sub
           ? `<button class="btn small danger" onclick="desvincularSubadmin('${p.id}')">Desvincular sub-admin</button>`
           : `<button class="btn small" onclick="abrirVincular('${p.id}')">Vincular sub-admin</button>`
@@ -714,6 +812,24 @@ async function carregarPousadas(){
       <div id="vincular-${p.id}"></div>
     </div>`;
   }).join('');
+}
+function labelPlano(s){
+  return {trial:'Teste grátis', ativa:'Pagando', isento:'Isento (grátis)', inadimplente:'Inadimplente'}[s] || s;
+}
+async function gerenciarPlano(pousadaId, statusAtual){
+  const opcoes = 'trial (teste), ativa (pagando), isento (grátis sempre), inadimplente';
+  const novoStatus = prompt(`Status atual: ${statusAtual}\nOpções: ${opcoes}\n\nDigite o novo status:`, statusAtual);
+  if(!novoStatus || !['trial','ativa','isento','inadimplente'].includes(novoStatus.trim())){
+    if(novoStatus) toast('Status inválido.', true);
+    return;
+  }
+  let trialFim = null;
+  if(novoStatus.trim()==='trial'){
+    trialFim = prompt('Até qual data é grátis? (AAAA-MM-DD)', '');
+  }
+  await chamarRpc('fn_definir_plano_pousada', { p_pousada_id: pousadaId, p_status: novoStatus.trim(), p_trial_fim: trialFim || null, p_valor_mensal: null });
+  toast('Assinatura atualizada.');
+  carregarPousadas();
 }
 async function renomearPousada(id, nomeAtual){
   const novo = prompt('Novo nome da pousada:', nomeAtual);
@@ -859,6 +975,10 @@ function toggleNovaReservaManual(){
     const hoje = new Date().toISOString().slice(0,10);
     document.getElementById('rm-checkin').min = hoje;
     document.getElementById('rm-checkout').min = hoje;
+    sb.from('quartos').select('id,numero').eq('pousada_id', minhaPousadaId).order('numero').then(({data})=>{
+      const sel = document.getElementById('rm-quarto');
+      sel.innerHTML = '<option value="">Vincular depois</option>' + (data||[]).map(q=>`<option value="${q.id}">Quarto ${escapeHtml(q.numero)}</option>`).join('');
+    });
   }
 }
 async function criarReservaManual(){
@@ -870,15 +990,20 @@ async function criarReservaManual(){
   const qtd = parseInt(document.getElementById('rm-qtd').value || '1', 10);
   const obs = document.getElementById('rm-obs').value.trim();
   const diaria = parseFloat(document.getElementById('rm-diaria').value || '0');
+  const quartoId = document.getElementById('rm-quarto').value || null;
+  const lgpd = document.getElementById('rm-lgpd').checked;
   if(!nome || !checkin || !checkout){ toast('Preencha nome, check-in e check-out.', true); return; }
   if(checkout <= checkin){ toast('O check-out precisa ser depois do check-in.', true); return; }
+  if(!lgpd){ toast('Confirme o consentimento LGPD antes de criar a reserva.', true); return; }
   await chamarRpc('fn_criar_reserva_manual', {
     p_pousada_id: minhaPousadaId, p_hospede_nome: nome, p_hospede_contato: contato || null,
     p_checkin: new Date(checkin+'T14:00:00').toISOString(),
     p_checkout: new Date(checkout+'T12:00:00').toISOString(),
-    p_quantidade_hospedes: qtd, p_observacoes: obs || null, p_valor_diaria: diaria
+    p_quantidade_hospedes: qtd, p_observacoes: obs || null, p_valor_diaria: diaria,
+    p_quarto_id: quartoId, p_lgpd_aceito: lgpd
   });
   ['rm-nome','rm-contato','rm-obs'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('rm-lgpd').checked = false;
   toggleNovaReservaManual();
   toast('Reserva criada. Agora vincule um quarto a ela.');
   carregarReservasSubadmin();
@@ -887,6 +1012,34 @@ async function criarReservaManual(){
 /* =========================================================
    SUB ADMIN — Quartos (chip NFC fixo por número)
    ========================================================= */
+async function uploadFoto(file, caminho){
+  const { error } = await sb.storage.from('pousada-media').upload(caminho, file, { upsert: true });
+  if(error) throw error;
+  return sb.storage.from('pousada-media').getPublicUrl(caminho).data.publicUrl;
+}
+async function carregarDetalhesPousada(){
+  const { data } = await sb.from('pousadas').select('descricao,endereco,comodidades').eq('id', minhaPousadaId).single();
+  if(data){
+    document.getElementById('pd-descricao').value = data.descricao || '';
+    document.getElementById('pd-endereco').value = data.endereco || '';
+    document.getElementById('pd-comodidades').value = data.comodidades || '';
+  }
+}
+async function salvarDetalhesPousada(){
+  const descricao = document.getElementById('pd-descricao').value.trim();
+  const endereco = document.getElementById('pd-endereco').value.trim();
+  const comodidades = document.getElementById('pd-comodidades').value.trim();
+  const arquivo = document.getElementById('pd-foto').files[0];
+  let fotoUrl = null;
+  try{
+    if(arquivo) fotoUrl = await uploadFoto(arquivo, `${minhaPousadaId}/capa.jpg`);
+    await chamarRpc('fn_atualizar_detalhes_pousada', {
+      p_pousada_id: minhaPousadaId, p_descricao: descricao||null, p_endereco: endereco||null,
+      p_comodidades: comodidades||null, p_foto_capa_url: fotoUrl
+    });
+    toast('Detalhes salvos.');
+  }catch(e){ toast(e.message || 'Erro ao salvar.', true); }
+}
 function toggleNovoQuarto(){
   const f = document.getElementById('form-novo-quarto');
   f.style.display = f.style.display==='none' ? 'block' : 'none';
@@ -896,10 +1049,12 @@ async function criarQuarto(){
   const numero = document.getElementById('nq-numero').value.trim();
   if(!numero){ toast('Informe o número do quarto.', true); return; }
   const diaria = parseFloat(document.getElementById('nq-diaria').value || '0');
-  const { error } = await sb.from('quartos').insert({ pousada_id: minhaPousadaId, numero, valor_diaria: diaria });
+  const diariaFds = document.getElementById('nq-diaria-fds').value;
+  const { error } = await sb.from('quartos').insert({ pousada_id: minhaPousadaId, numero, valor_diaria: diaria, valor_diaria_fds: diariaFds?parseFloat(diariaFds):null });
   if(error){ toast(error.message.includes('duplicate') ? 'Já existe um quarto com esse número.' : error.message, true); return; }
   document.getElementById('nq-numero').value = '';
   document.getElementById('nq-diaria').value = '0';
+  document.getElementById('nq-diaria-fds').value = '';
   toggleNovoQuarto();
   toast('Quarto criado.');
   carregarQuartos();
@@ -912,28 +1067,72 @@ async function carregarQuartos(){
   if(error){ box.innerHTML = '<p class="empty">Erro ao carregar.</p>'; return; }
   if(!quartos.length){ box.innerHTML = '<p class="empty">Nenhum quarto cadastrado ainda.</p>'; return; }
 
-  box.innerHTML = quartos.map(q=>`
-    <div class="row ${q.status==='ocupado' ? 'q-ocupado' : 'q-livre'}">
-      <div class="row-top">
-        <div>
-          <div class="row-title">Quarto ${escapeHtml(q.numero)}</div>
-          <div class="row-sub">R$ ${Number(q.valor_diaria).toFixed(2)} / diária <button class="btn small secondary" style="padding:3px 9px;font-size:11px;margin-left:6px;" onclick="editarPrecoQuarto('${q.id}', ${q.valor_diaria})">Editar</button></div>
+  const STATUS_INFO = {
+    livre:{icone:'🟢', label:'Livre'}, ocupado:{icone:'🔴', label:'Ocupado'},
+    limpeza:{icone:'🧹', label:'Limpeza pendente'}, manutencao:{icone:'🛠️', label:'Manutenção'}
+  };
+  box.innerHTML = `<div class="quartos-grid">${quartos.map(q=>{
+    const si = STATUS_INFO[q.status] || STATUS_INFO.livre;
+    let acao = '';
+    if(q.status==='limpeza') acao = `<button class="btn small" onclick="definirStatusQuarto('${q.id}','livre')">✓ Marcar como limpo</button>`;
+    else if(q.status==='manutencao') acao = `<button class="btn small" onclick="definirStatusQuarto('${q.id}','livre')">✓ Tirar de manutenção</button>`;
+    else if(q.status==='livre') acao = `<button class="btn small secondary" onclick="definirStatusQuarto('${q.id}','manutencao')">🛠️ Manutenção</button>`;
+    return `
+    <div class="q-card q-${q.status}">
+      ${q.foto_url ? `<img class="q-foto" src="${escapeAttr(q.foto_url)}">` : `<div class="q-foto-vazia">Sem foto</div>`}
+      <div class="q-body">
+        <span class="q-status-badge">${si.icone} ${si.label}</span>
+        <div class="q-numero">Quarto ${escapeHtml(q.numero)}</div>
+        <div class="q-preco">R$ ${Number(q.valor_diaria).toFixed(2)}/diária${q.valor_diaria_fds?` · R$ ${Number(q.valor_diaria_fds).toFixed(2)} fds`:''}</div>
+        <div class="q-acoes">
+          ${acao}
+          <button class="btn small secondary" onclick="toggleDetalhesQuarto('${q.id}')">⋯ Detalhes</button>
         </div>
-        <span class="chip">${q.status==='ocupado' ? '● Ocupado' : '● Livre'}</span>
-      </div>
-      <div class="nfc-box">
-        <div class="nfc-label">Link do quarto (gravar no chip NFC da porta)</div>
-        <div class="nfc-row">
-          <input readonly id="nfc-quarto-${q.id}" value="${escapeAttr(linkPortalQuarto(q.acesso_token))}">
-          <button class="btn small secondary" onclick="copiarLinkQuarto('${q.id}')">Copiar</button>
+        <div id="detalhes-quarto-${q.id}" style="display:none;margin-top:10px;">
+          <div class="nfc-box">
+            <div class="nfc-label">Preço</div>
+            <button class="btn small secondary" onclick="editarPrecoQuarto('${q.id}', ${q.valor_diaria}, ${q.valor_diaria_fds||'null'})">Editar preço</button>
+          </div>
+          <div class="nfc-box">
+            <div class="nfc-label">Foto do quarto</div>
+            <input type="file" accept="image/*" id="foto-quarto-${q.id}" onchange="uploadFotoQuarto('${q.id}')">
+          </div>
+          <div class="nfc-box">
+            <div class="nfc-label">Link do quarto (chip NFC)</div>
+            <div class="nfc-row">
+              <input readonly id="nfc-quarto-${q.id}" value="${escapeAttr(linkPortalQuarto(q.acesso_token))}">
+              <button class="btn small secondary" onclick="copiarLinkQuarto('${q.id}')">Copiar</button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('')}</div>`;
 }
-async function editarPrecoQuarto(quartoId, atual){
+function toggleDetalhesQuarto(quartoId){
+  const el = document.getElementById('detalhes-quarto-'+quartoId);
+  el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
+async function definirStatusQuarto(quartoId, status){
+  await chamarRpc('fn_definir_status_quarto', { p_quarto_id: quartoId, p_status: status });
+  toast('Status do quarto atualizado.');
+  carregarQuartos();
+}
+async function uploadFotoQuarto(quartoId){
+  const arquivo = document.getElementById('foto-quarto-'+quartoId).files[0];
+  if(!arquivo) return;
+  try{
+    const url = await uploadFoto(arquivo, `${minhaPousadaId}/quarto-${quartoId}.jpg`);
+    await chamarRpc('fn_definir_foto_quarto', { p_quarto_id: quartoId, p_foto_url: url });
+    toast('Foto do quarto salva.');
+  }catch(e){ toast(e.message || 'Erro ao enviar foto.', true); }
+}
+async function editarPrecoQuarto(quartoId, atual, atualFds){
   const novo = parseFloat(prompt('Novo valor da diária (R$):', atual) || atual);
   if(isNaN(novo) || novo<0) return;
-  await chamarRpc('fn_definir_preco_quarto', { p_quarto_id: quartoId, p_valor_diaria: novo });
+  const novoFdsStr = prompt('Diária de sexta/sábado (R$, deixe vazio pra remover):', atualFds||'');
+  const novoFds = novoFdsStr ? parseFloat(novoFdsStr) : null;
+  await chamarRpc('fn_definir_preco_quarto', { p_quarto_id: quartoId, p_valor_diaria: novo, p_valor_diaria_fds: novoFds });
   toast('Preço atualizado.');
   carregarQuartos();
 }
@@ -1476,11 +1675,15 @@ async function abrirPortalHospede(token){
     </div>
 
     <div id="portal-sec-estadia">
+      ${dados.foto_capa_url ? `<img src="${escapeAttr(dados.foto_capa_url)}" style="width:100%;border-radius:10px;margin-bottom:12px;box-shadow:var(--shadow);">` : ''}
       <div class="row">
         <div class="row-title">${t('estadia')}</div>
         <div class="row-sub">${t('checkin')}: ${fmtData(dados.checkin_em)}</div>
         <div class="row-sub">${t('checkoutPrev')}: ${fmtDataCurta(dados.checkout_previsto_em)}</div>
+        ${dados.endereco ? `<div class="row-sub">📍 ${escapeHtml(dados.endereco)}</div>` : ''}
       </div>
+      ${dados.descricao ? `<div class="row"><div class="row-sub">${escapeHtml(dados.descricao)}</div></div>` : ''}
+      ${dados.comodidades ? `<div class="row"><div class="row-title" style="font-size:13px;">Comodidades</div><div class="row-sub">${escapeHtml(dados.comodidades)}</div></div>` : ''}
       <button class="fab-add" style="margin-top:14px;" onclick="portalTab('chat')">${t('reservarMais')}</button>
       <p class="row-sub">${t('faleParaReservar')}</p>
     </div>
